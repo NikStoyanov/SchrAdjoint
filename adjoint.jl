@@ -1,5 +1,6 @@
 using Optim
 using Plots
+using SparseArrays
 using LinearAlgebra
 using IterativeSolvers
 
@@ -22,21 +23,18 @@ function schrodinger_fd(V)
     # TODO: change to use spdiagm.
 
     # Center-difference scheme.
-    A = Tridiagonal([1.0 for i in 1:N-1], [2.0 for i in 1:N], [1.0 for i in 1:N-1])
+    A = spdiagm(-1 => [1.0 for i in 1:N-1], 0 => [2.0 for i in 1:N], 1 => [1.0 for i in 1:N-1])
 
-    # TODO: add correct BC.
     # Periodic boundary conditions.
-    #A[1, N] = 1.0
-    #A[N, 1] = 1.0
+    A[1, N] = 1.0
+    A[N, 1] = 1.0
 
     A = -A / dx^2 + Diagonal(V)
-    A = SymTridiagonal(A)
-
     schr.A = A
 
     # Smallest values.
-    E = eigvals(A)[1]
-    Ψ = eigvecs(A)[:, 1]
+    E = eigvals(Matrix(A))[1]
+    Ψ = eigvecs(Matrix(A))[:, 1]
 
     # Pick sign.
     if(sum(Ψ) < 0)
@@ -90,7 +88,8 @@ end
 # Initial guess.
 V0 = [0.0 for i in -1:m:1]
 
-A = Tridiagonal([1.0 for i in 1:N-1], [2.0 for i in 1:N], [1.0 for i in 1:N-1])
+A = spdiagm(-1 => [1.0 for i in 1:N-1], 0 => [2.0 for i in 1:N], 1 => [1.0 for i in 1:N-1])
+
 schr = Schrodinger(Ψ0, N, dx, A, 0.0, zeros(N))
 
 # Run to populate values.
@@ -113,5 +112,5 @@ schrodinger_fd(V)
 Ψ = schr.Ψ
 
 plot(x, Ψ0, label = "\\Psi_0")
-plot!(x, Ψ, label = "\\Psi")
-plot!(x, V / 1000, label = "V/1000")
+scatter!(x, Ψ, label = "\\Psi_i")
+plot!(x, V / 1000, label = "V/1000", linestyle = :dash)
