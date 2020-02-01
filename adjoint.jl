@@ -1,5 +1,6 @@
 using Optim
 using Plots
+using LineSearches
 using SparseArrays
 using LinearAlgebra
 using IterativeSolvers
@@ -97,13 +98,15 @@ schrodinger_fd(V0)
 
 # TODO: add preconditioners from Preconditioners.jl
 # https://julianlsolvers.github.io/Optim.jl/stable/#algo/precondition/
-# Optimize.
+# Optimize using the conjugate gradient method and the Nocedal and Wright line search.
 res= optimize(schrodinger_fd,
               schrodinger_fd_adj,
               V0,
-              ConjugateGradient(),
-              Optim.Options(iterations = 300,
+              ConjugateGradient(;alphaguess = LineSearches.InitialStatic(),
+                                linesearch = LineSearches.StrongWolfe()),
+              Optim.Options(iterations = 1500,
                             show_trace = true))
+
 show(res)
 V = Optim.minimizer(res)
 
