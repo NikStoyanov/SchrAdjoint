@@ -21,8 +21,6 @@ function schrodinger_fd(V)
     dx = schr.dx
     Ψ0 = schr.Ψ0
 
-    # TODO: change to use spdiagm.
-
     # Center-difference scheme.
     A = spdiagm(-1 => [1.0 for i in 1:N-1], 0 => [2.0 for i in 1:N], 1 => [1.0 for i in 1:N-1])
 
