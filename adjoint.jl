@@ -111,6 +111,20 @@ V = Optim.minimizer(res)
 schrodinger_fd(V)
 Ψ = schr.Ψ
 
-plot(x, Ψ0, label = "\\Psi_0")
-scatter!(x, Ψ, label = "\\Psi_i")
-plot!(x, V / 1000, label = "V/1000", linestyle = :dash)
+scatter(x, Ψ, label = "\\Psi_i",
+        markersize = 3,
+        markerstrokecolor = :blue,
+        markercolor = :white)
+plot!(x, Ψ0, label = "\\Psi_0",
+      color = :red)
+plot!(x, V / 1000, label = "V/1000",
+      linestyle = :dash,
+      color = :black)
+plot!(xlims = (-1, 1),
+      xticks = -1:0.2:1,
+      ylims = (-0.15, 0.2),
+      yticks = -0.15:0.05:0.2,
+      grid = false,
+      legend = :bottomleft,
+      formar = :svg)
+savefig("psi1.svg")
