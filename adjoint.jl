@@ -1,35 +1,21 @@
 using Optim
 using Plots
 using LineSearches
-using SparseArrays
 using LinearAlgebra
 using IterativeSolvers
 
 # Pass eigenequation solution to adjoint calculation.
 mutable struct Schrodinger
-    Ψ0
-    N
-    dx
     A
     E
     Ψ
 end
 
 # Solve the eigenequation.
-function schrodinger_fd(V)
-    N = schr.N
-    dx = schr.dx
-    Ψ0 = schr.Ψ0
+function schrodinger_fd(V, schr, p)
+    N, dx, Ψ0, Mesh = p
 
-    # Center-difference scheme.
-    A = spdiagm(-1 => [1.0 for i in 1:N-1], 0 => [2.0 for i in 1:N], 1 => [1.0 for i in 1:N-1])
-
-    # Periodic boundary conditions.
-    A[1, N] = 1.0
-    A[N, 1] = 1.0
-
-    A = -A / dx^2 + Diagonal(V)
-    schr.A = A
+    A = -Mesh / dx^2 + Diagonal(V)
 
     # Smallest values.
     E = eigvals(Matrix(A))[1]
@@ -40,6 +26,7 @@ function schrodinger_fd(V)
         Ψ = -Ψ
     end
 
+    schr.A = A
     schr.E = E
     schr.Ψ = Ψ
 
@@ -52,10 +39,9 @@ function schrodinger_fd(V)
 end
 
 # Adjoint to get the gradient.
-function schrodinger_fd_adj(gp, V)
-    Ψ0 = schr.Ψ0
-    N = schr.N
-    dx = schr.dx
+function schrodinger_fd_adj(gp, V, schr, p)
+    N, dx, Ψ0, _ = p
+
     A = schr.A
     E = schr.E
     Ψ = schr.Ψ
@@ -72,10 +58,10 @@ function schrodinger_fd_adj(gp, V)
 end
 
 # Domain.
-m = 0.02
-x = [i for i in -1:m:1]
-N = length(x)
-dx = x[2] - x[1]
+const m = 0.02
+const x = [i for i in -1:m:1]
+const N = length(x)
+const dx = x[2] - x[1]
 
 # Target solution, normalize and pick sign.
 Ψ0 = 1.0 .+ sin.(π .* x .+ cos.(3 * π .* x))
@@ -85,20 +71,31 @@ if(sum(Ψ0) < 0)
 end
 
 # Initial guess.
-V0 = [0.0 for i in -1:m:1]
+const V0 = [0.0 for i in -1:m:1]
 
-A = spdiagm(-1 => [1.0 for i in 1:N-1], 0 => [2.0 for i in 1:N], 1 => [1.0 for i in 1:N-1])
+# Center-difference scheme.
+Mesh = spdiagm(-1 => [1.0 for i in 1:N-1],
+               0 => [2.0 for i in 1:N],
+               1 => [1.0 for i in 1:N-1])
 
-schr = Schrodinger(Ψ0, N, dx, A, 0.0, zeros(N))
+# Periodic boundary conditions.
+Mesh[1, N] = 1.0
+Mesh[N, 1] = 1.0
+
+# Build constants.
+const p = [N, dx, Ψ0, Mesh]
+
+# Build struct.
+schr = Schrodinger(Mesh, 0.0, zeros(N))
 
 # Run to populate values.
-schrodinger_fd(V0)
+schrodinger_fd(V0, schr, p)
 
 # TODO: add preconditioners from Preconditioners.jl
 # https://julianlsolvers.github.io/Optim.jl/stable/#algo/precondition/
 # Optimize using the conjugate gradient method and the Nocedal and Wright line search.
-res= optimize(schrodinger_fd,
-              schrodinger_fd_adj,
+res= optimize(V0 -> schrodinger_fd(V0, schr, p),
+              (gp, V) -> schrodinger_fd_adj(gp, V, schr, p),
               V0,
               ConjugateGradient(;alphaguess = LineSearches.InitialStatic(),
                                 linesearch = LineSearches.StrongWolfe()),
@@ -109,18 +106,22 @@ show(res)
 V = Optim.minimizer(res)
 
 # Calculate the Ψ for the optimized V.
-schrodinger_fd(V)
+schrodinger_fd(V, schr, p)
 Ψ = schr.Ψ
 
+# Plots results.
 scatter(x, Ψ, label = "\\Psi_i",
         markersize = 3,
         markerstrokecolor = :blue,
         markercolor = :white)
+
 plot!(x, Ψ0, label = "\\Psi_0",
       color = :red)
+
 plot!(x, V / 1000, label = "V/1000",
       linestyle = :dash,
       color = :black)
+
 plot!(xlims = (-1, 1),
       xticks = -1:0.2:1,
       ylims = (-0.15, 0.2),
@@ -128,4 +129,5 @@ plot!(xlims = (-1, 1),
       grid = false,
       legend = :bottomleft,
       fmt = :svg)
+
 savefig("psi1.svg")
