@@ -14,9 +14,9 @@ end
 
 # Solve the eigenequation.
 function schrodinger_fd(V, schr, p)
-    N, dx, Ψ0, Mesh = p
+    N, _, Ψ0, Mesh = p
 
-    A = -Mesh / dx^2 + Diagonal(V)
+    A = Mesh + Diagonal(V)
 
     # Smallest values.
     E = eigvals(Matrix(A))[1]
@@ -82,6 +82,7 @@ Mesh = spdiagm(-1 => [1.0 for i in 1:N-1],
 # Periodic boundary conditions.
 Mesh[1, N] = 1.0
 Mesh[N, 1] = 1.0
+Mesh = -Mesh / dx^2
 
 # Build constants.
 const p = [N, dx, Ψ0, Mesh]
