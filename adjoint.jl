@@ -1,6 +1,7 @@
 using Optim
 using Plots
 using LineSearches
+using SparseArrays
 using LinearAlgebra
 using IterativeSolvers
 
