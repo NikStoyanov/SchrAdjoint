@@ -6,10 +6,10 @@ using LinearAlgebra
 using IterativeSolvers
 
 # Pass eigenequation solution to adjoint calculation.
-mutable struct Schrodinger
-    A
-    E
-    Ψ
+mutable struct Schrodinger{T1, T2, T3}
+    A::T1
+    E::T2
+    Ψ::T3
 end
 
 # Solve the eigenequation.
