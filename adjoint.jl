@@ -82,6 +82,8 @@ Mesh = spdiagm(-1 => [1.0 for i in 1:N-1],
 # Periodic boundary conditions.
 Mesh[1, N] = 1.0
 Mesh[N, 1] = 1.0
+
+# Build mesh.
 Mesh = -Mesh / dx^2
 
 # Build constants.
