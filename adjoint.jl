@@ -132,6 +132,7 @@ plot!(xlims = (-1, 1),
       yticks = -0.15:0.05:0.2,
       grid = false,
       legend = :bottomleft,
-      fmt = :svg)
+      fmt = :svg,
+      framestyle = :box)
 
 savefig("psi1.svg")
